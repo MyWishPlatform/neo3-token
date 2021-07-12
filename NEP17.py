@@ -231,8 +231,10 @@ def deploy() -> bool:
     put(SUPPLY_KEY, TOKEN_TOTAL_SUPPLY)
     put(OWNER, TOKEN_TOTAL_SUPPLY)
 
-    for holder, amount in zip(TOKEN_HOLDERS, TOKEN_HOLDERS_AMOUNTS):
-        put(holder, amount)
+    holders_count = len(TOKEN_HOLDERS)
+
+    for i in range(holders_count):
+        put(TOKEN_HOLDERS[i], TOKEN_HOLDERS_AMOUNTS[i])
 
     on_transfer(None, OWNER, TOKEN_TOTAL_SUPPLY)
     return True
