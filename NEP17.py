@@ -1,16 +1,11 @@
-from typing import Any, Union, List
-
+from typing import Any, Union
 from boa3.builtin import NeoMetadata, metadata, public
 from boa3.builtin.contract import Nep17TransferEvent, abort
-from boa3.builtin.interop import Oracle
-from boa3.builtin.interop.blockchain import get_contract, Transaction
-from boa3.builtin.interop.contract import GAS, NEO, call_contract, destroy_contract, update_contract
-from boa3.builtin.interop.json import json_deserialize
-from boa3.builtin.interop.runtime import calling_script_hash, check_witness, script_container, executing_script_hash
+from boa3.builtin.interop.blockchain import get_contract
+from boa3.builtin.interop.contract import call_contract
+from boa3.builtin.interop.runtime import calling_script_hash, check_witness
 from boa3.builtin.interop.storage import delete, get, put
 from boa3.builtin.type import UInt160
-from boa3.builtin.interop.runtime import log
-from typing import cast
 
 
 # -------------------------------------------
@@ -23,94 +18,66 @@ def manifest_metadata() -> NeoMetadata:
     Defines this smart contract's metadata information
     """
     meta = NeoMetadata()
-    meta.author = "yulian-khalitov"
-    meta.description = "MyWish Token"
-    meta.email = "yulian@mywish.io"
+    meta.author = 'MyWish'
+    meta.email = 'noreply@mywish.io'
+    meta.description = 'MyWish NEP17 Standard Token'
+    meta.version = "v1.0"
     return meta
 
-
-# -------------------------------------------
-# TOKEN SETTINGS
-# -------------------------------------------
-
-OWNER_KEY = 'owner'
-SUPPLY_KEY = 'totalSupply'
-
-OWNER = UInt160(b'')
-PREMINT_ACCOUNTS: List[UInt160] = []
-PREMINT_AMOUNTS: List[int] = []
-
-DECIMALS = 8
-SYMBOL = 'WISH'
-
-# Value of this NEP17 token corresponds to NEO
-AMOUNT_PER_NEO = 10
-
-# Value of this NEP17 token compared to GAS
-AMOUNT_PER_GAS = 2
+# ---------------------------------
+# CONTRACT GLOBALS
+# ---------------------------------
 
 
-# -------------------------------------------
-# Events
-# -------------------------------------------
+ACCOUNT_PREFIX = b'a'
+ADMIN = UInt160(b'\x80\xcf\xb2\\\x83z\xa4k\xd8\xfd\x14Q\xf1w9\xd2qjY\xb4')
+TOKEN_DECIMALS = 0
+TOKEN_PREFIX = b't'
+TOKEN_SYMBOL = 'WISH'
+TOTAL_SUPPLY = b's'
 
+# ---------------------------------
+# EVENTS
+# ---------------------------------
 
 on_transfer = Nep17TransferEvent
 
-
-# -------------------------------------------
+# ---------------------------------
 # Methods
-# -------------------------------------------
+# ---------------------------------
 
 
 @public
 def symbol() -> str:
     """
     Gets the symbols of the token.
-    This string must be valid ASCII, must not contain whitespace or control characters, should be limited to uppercase
-    Latin alphabet (i.e. the 26 letters used in English) and should be short (3-8 characters is recommended).
-    This method must always return the same value every time it is invoked.
     :return: a short string representing symbol of the token managed in this contract.
     """
-    return SYMBOL
+    return TOKEN_SYMBOL
 
 
 @public
 def decimals() -> int:
     """
     Gets the amount of decimals used by the token.
-    E.g. 8, means to divide the token amount by 100,000,000 (10 ^ 8) to get its user representation.
-    This method must always return the same value every time it is invoked.
     :return: the number of decimals used by the token.
     """
-    return DECIMALS
-
-
-def hasOwner() -> bool:
-    return len(get(OWNER_KEY)) == 20
-
-
-@public
-def getOwner() -> UInt160:
-    return UInt160(get(OWNER_KEY))
+    return TOKEN_DECIMALS
 
 
 @public
 def totalSupply() -> int:
     """
     Gets the total token supply deployed in the system.
-    This number must not be in its user representation. E.g. if the total supply is 10,000,000 tokens, this method
-    must return 10,000,000 * 10 ^ decimals.
-    :return: the total token supply deployed in the system.
+    :return: the total token supply in the system.
     """
-    return get(SUPPLY_KEY).to_int()
+    return get(TOTAL_SUPPLY).to_int()
 
 
 @public
 def balanceOf(account: UInt160) -> int:
     """
     Get the current balance of an address
-    The parameter account must be a 20-byte address represented by a UInt160.
     :param account: the account address to retrieve the balance for
     :type account: UInt160
     """
@@ -182,31 +149,28 @@ def post_transfer(from_address: Union[UInt160, None], to_address: Union[UInt160,
     :param data: any pertinent data that might validate the transaction
     :type data: Any
     """
-    if not isinstance(to_address, None):    # TODO: change to 'is not None' when `is` semantic is implemented
+    if not isinstance(to_address, None):
         contract = get_contract(to_address)
-        if not isinstance(contract, None):      # TODO: change to 'is not None' when `is` semantic is implemented
+        if not isinstance(contract, None):
             call_contract(to_address, 'onNEP17Payment', [from_address, amount, data])
 
 
+@public
 def mint(account: UInt160, amount: int):
     """
-    Mints new tokens. This is not a NEP-17 standard method, it's only being use to complement the onPayment method
+    Mints new tokens.
     :param account: the address of the account that is sending cryptocurrency to this contract
     :type account: UInt160
     :param amount: the amount of gas to be refunded
     :type amount: int
     :raise AssertionError: raised if amount is less than than 0
     """
-    assert amount >= 0
-
-    if not check_witness(OWNER):
-        return False
-
+    assert amount >= 0 and check_witness(ADMIN)
     if amount != 0:
         current_total_supply = totalSupply()
         account_balance = balanceOf(account)
 
-        put(SUPPLY_KEY, current_total_supply + amount)
+        put(TOTAL_SUPPLY, current_total_supply + amount)
         put(account, account_balance + amount)
 
         on_transfer(None, account, amount)
@@ -214,7 +178,7 @@ def mint(account: UInt160, amount: int):
 
 
 @public
-def burn(amount: int):
+def burn(account: UInt160, amount: int):
     """
     Burns tokens.
     :param account: the address of the account that is sending cryptocurrency to this contract
@@ -223,65 +187,35 @@ def burn(amount: int):
     :type amount: int
     :raise AssertionError: raised if amount is less than than 0
     """
-    assert amount >= 0
+    assert amount >= 0 and check_witness(ADMIN)
     if amount != 0:
         current_total_supply = totalSupply()
+        account_balance = balanceOf(account)
 
-        tx = cast(Transaction, script_container)
-        sender = tx.sender
+        assert account_balance >= amount
+        put(TOTAL_SUPPLY, current_total_supply - amount)
 
-        account_balance = balanceOf(sender)
-        put(SUPPLY_KEY, current_total_supply - amount)
-        put(sender, account_balance - amount)
+        if account_balance == amount:
+            delete(account)
+        else:
+            put(account, account_balance - amount)
 
-        on_transfer(sender, None, amount)
-
-
-@public
-def verify() -> bool:
-    """
-    When this contract address is included in the transaction signature,
-    this method will be triggered as a VerificationTrigger to verify that the signature is correct.
-    For example, this method needs to be called when withdrawing token from the contract.
-    :return: whether the transaction signature is correct
-    """
-    return check_witness(OWNER)
+        on_transfer(account, None, amount)
+        post_transfer(account, None, amount, None)
 
 
 @public
-def _deploy():
-    """
-    Initializes the storage when the smart contract is deployed.
-    :return: whether the deploy was successful. This method must return True only during the smart contract's deploy.
-    """
-
-    # Set the owner on the first deploy
-    if hasOwner():
-        return
-
-    put(OWNER_KEY, OWNER)
-
-    premint_addresses_count = len(PREMINT_ACCOUNTS)
-    total_supply = 0
-    for i in range(premint_addresses_count):
-        amount = PREMINT_AMOUNTS[i]
-        account = PREMINT_ACCOUNTS[i]
-        put(account, amount)
-        total_supply += amount
-        on_transfer(None, account, amount)
-
-    put(SUPPLY_KEY, total_supply)
+def _deploy(data: Any, update: bool):
+    amount = 1000
+    put(ADMIN, amount)
+    on_transfer(None, ADMIN, amount)
+    put(TOTAL_SUPPLY, amount)
 
 
 @public
 def onNEP17Payment(from_address: UInt160, amount: int, data: Any):
     """
-    NEP-17 affirms :"if the receiver is a deployed contract, the function MUST call onPayment method on receiver
-    contract with the data parameter from transfer AFTER firing the Transfer event. If the receiver doesn't want to
-    receive this transfer it MUST call ABORT." Therefore, since this is a smart contract, onPayment must exists.
-    There is no guideline as to how it should verify the transaction and it's up to the user to make this verification.
-    For instance, this onPayment method checks if this smart contract is receiving NEO or GAS so that it can mint a
-    NEP17 token. If it's not receiving a native token, than it will abort.
+    This contract is currently not accepting any transfers.
     :param from_address: the address of the one who is trying to send cryptocurrency to this smart contract
     :type from_address: UInt160
     :param amount: the amount of cryptocurrency that is being sent to the this smart contract
@@ -289,12 +223,4 @@ def onNEP17Payment(from_address: UInt160, amount: int, data: Any):
     :param data: any pertinent data that might validate the transaction
     :type data: Any
     """
-    # Use calling_script_hash to identify if the incoming token is NEO or GAS
-    if calling_script_hash == NEO:
-        corresponding_amount = amount * AMOUNT_PER_NEO
-        mint(from_address, corresponding_amount)
-    elif calling_script_hash == GAS:
-        corresponding_amount = amount * AMOUNT_PER_GAS
-        mint(from_address, corresponding_amount)
-    else:
-        abort()
+    abort()
