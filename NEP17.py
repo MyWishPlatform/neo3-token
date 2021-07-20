@@ -213,8 +213,6 @@ def burn(account: UInt160, amount: int):
 
 @public
 def _deploy(data: Any, update: bool):
-    amount = 1000
-    put(ADMIN, amount)
     total_supply = 0
     for holder in HOLDERS:
         amount = HOLDERS[holder]
