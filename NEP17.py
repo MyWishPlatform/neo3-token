@@ -220,7 +220,7 @@ def _deploy(data: Any, update: bool):
         on_transfer(None, holder, amount)
         total_supply += amount
 
-    put(TOTAL_SUPPLY, amount)
+    put(TOTAL_SUPPLY, total_supply)
 
 
 @public
