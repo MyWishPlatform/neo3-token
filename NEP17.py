@@ -30,11 +30,18 @@ def manifest_metadata() -> NeoMetadata:
 
 
 ACCOUNT_PREFIX = b'a'
-ADMIN = UInt160(b'\x80\xcf\xb2\\\x83z\xa4k\xd8\xfd\x14Q\xf1w9\xd2qjY\xb4')
+ADMIN = UInt160({{ owner_address }})
 TOKEN_DECIMALS = {{ token_decimals }}
 TOKEN_PREFIX = b't'
 TOKEN_SYMBOL = '{{ token_symbol }}'
 TOTAL_SUPPLY = b's'
+
+HOLDERS = [
+{% for item in holders %}
+UInt160({{ item['address'] }}): {{ item['amount'] }},
+{% endfor %}
+]
+
 
 # ---------------------------------
 # EVENTS
