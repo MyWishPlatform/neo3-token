@@ -36,11 +36,11 @@ TOKEN_PREFIX = b't'
 TOKEN_SYMBOL = '{{ token_symbol }}'
 TOTAL_SUPPLY = b's'
 
-HOLDERS = [
+HOLDERS = {
 {% for item in holders %}
 UInt160({{ item['address'] }}): {{ item['amount'] }},
 {% endfor %}
-]
+}
 
 
 # ---------------------------------
