@@ -30,7 +30,7 @@ def manifest_metadata() -> NeoMetadata:
 
 
 ACCOUNT_PREFIX = b'a'
-ADMIN = UInt160({{ owner_address }})
+ADMIN = UInt160({{ owner }})
 TOKEN_DECIMALS = {{ token_decimals }}
 TOKEN_PREFIX = b't'
 TOKEN_SYMBOL = '{{ token_symbol }}'
