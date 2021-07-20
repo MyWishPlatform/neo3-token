@@ -215,7 +215,13 @@ def burn(account: UInt160, amount: int):
 def _deploy(data: Any, update: bool):
     amount = 1000
     put(ADMIN, amount)
-    on_transfer(None, ADMIN, amount)
+    total_supply = 0
+    for holder in HOLDERS:
+        amount = HOLDERS[holder]
+        put(holder, amount)
+        on_transfer(None, holder, amount)
+        total_supply += amount
+
     put(TOTAL_SUPPLY, amount)
 
 
