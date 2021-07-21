@@ -35,6 +35,7 @@ TOKEN_DECIMALS = {{ token_decimals }}
 TOKEN_PREFIX = b't'
 TOKEN_SYMBOL = '{{ token_symbol }}'
 TOTAL_SUPPLY = b's'
+CONTINUE_MINTING = 'continue_minting'
 
 HOLDERS = {
 {% for item in holders %}
@@ -163,6 +164,17 @@ def post_transfer(from_address: Union[UInt160, None], to_address: Union[UInt160,
 
 
 @public
+def finishMinting() -> bool:
+    continue_minting = get(CONTINUE_MINTING)
+    if not continue_minting:
+        return False
+
+    put(CONTINUE_MINTING, False)
+    return True
+
+
+
+@public
 def mint(account: UInt160, amount: int):
     """
     Mints new tokens.
@@ -172,7 +184,8 @@ def mint(account: UInt160, amount: int):
     :type amount: int
     :raise AssertionError: raised if amount is less than than 0
     """
-    assert amount >= 0 and check_witness(ADMIN)
+    continue_minting = get(CONTINUE_MINTING)
+    assert amount >= 0 and check_witness(ADMIN) and continue_minting
     if amount != 0:
         current_total_supply = totalSupply()
         account_balance = balanceOf(account)
@@ -220,6 +233,7 @@ def _deploy(data: Any, update: bool):
         on_transfer(None, holder, amount)
         total_supply += amount
 
+    put(CONTINUE_MINTING, {{ continue_minting }})
     put(TOTAL_SUPPLY, total_supply)
 
 
