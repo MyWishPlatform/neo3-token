@@ -35,7 +35,7 @@ TOKEN_DECIMALS = {{ token_decimals }}
 TOKEN_PREFIX = b't'
 TOKEN_SYMBOL = '{{ token_symbol }}'
 TOTAL_SUPPLY = b's'
-CONTINUE_MINTING = 'continue_minting'
+CONTINUE_MINTING = b'continue_minting'
 
 HOLDERS = {
 {% for item in holders %}
