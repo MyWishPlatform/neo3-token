@@ -37,11 +37,14 @@ TOKEN_SYMBOL = '{{ token_symbol }}'
 TOTAL_SUPPLY = b's'
 CONTINUE_MINTING = b'continue_minting'
 
+{% if (holders is defined) and holders %}
 HOLDERS = {
 {% for item in holders %}
 UInt160({{ item['address'] }}): {{ item['amount'] }},
 {% endfor %}
 }
+{% endif %}
+
 
 
 # ---------------------------------
@@ -227,11 +230,13 @@ def burn(account: UInt160, amount: int):
 @public
 def _deploy(data: Any, update: bool):
     total_supply = 0
+    { % if (holders is defined) and holders %}
     for holder in HOLDERS.keys():
         amount = HOLDERS[holder]
         put(holder, amount)
         on_transfer(None, holder, amount)
         total_supply += amount
+    { % endif %}
 
     put(CONTINUE_MINTING, {{ continue_minting }})
     put(TOTAL_SUPPLY, total_supply)
