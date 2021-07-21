@@ -165,7 +165,7 @@ def post_transfer(from_address: Union[UInt160, None], to_address: Union[UInt160,
 
 @public
 def finishMinting() -> bool:
-    continue_minting = get(CONTINUE_MINTING)
+    continue_minting = get(CONTINUE_MINTING).to_bool()
     if not continue_minting:
         return False
 
@@ -184,7 +184,7 @@ def mint(account: UInt160, amount: int):
     :type amount: int
     :raise AssertionError: raised if amount is less than than 0
     """
-    continue_minting = get(CONTINUE_MINTING)
+    continue_minting = get(CONTINUE_MINTING).to_bool()
     assert amount >= 0 and check_witness(ADMIN) and continue_minting
     if amount != 0:
         current_total_supply = totalSupply()
