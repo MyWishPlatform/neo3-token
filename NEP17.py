@@ -230,13 +230,13 @@ def burn(account: UInt160, amount: int):
 @public
 def _deploy(data: Any, update: bool):
     total_supply = 0
-    { % if (holders is defined) and holders %}
+{ % if (holders is defined) and holders %}
     for holder in HOLDERS.keys():
         amount = HOLDERS[holder]
         put(holder, amount)
         on_transfer(None, holder, amount)
         total_supply += amount
-    { % endif %}
+{ % endif %}
 
     put(CONTINUE_MINTING, {{ continue_minting }})
     put(TOTAL_SUPPLY, total_supply)
