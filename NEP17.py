@@ -1,9 +1,9 @@
-from typing import Any, Union
+from typing import Any, Union, cast
 from boa3.builtin import NeoMetadata, metadata, public
 from boa3.builtin.contract import Nep17TransferEvent, abort
-from boa3.builtin.interop.blockchain import get_contract
+from boa3.builtin.interop.blockchain import get_contract, Transaction
 from boa3.builtin.interop.contract import call_contract
-from boa3.builtin.interop.runtime import calling_script_hash, check_witness
+from boa3.builtin.interop.runtime import calling_script_hash, check_witness, script_container
 from boa3.builtin.interop.storage import delete, get, put
 from boa3.builtin.type import UInt160
 
@@ -201,21 +201,21 @@ def mint(account: UInt160, amount: int):
 
 
 @public
-def burn(account: UInt160, amount: int):
+def burn(amount: int):
     """
     Burns tokens.
-    :param account: the address of the account that is sending cryptocurrency to this contract
-    :type account: UInt160
     :param amount: the amount to be burned
     :type amount: int
     :raise AssertionError: raised if amount is less than than 0
     """
-    assert amount >= 0 and check_witness(ADMIN)
+    assert amount >= 0
     if amount != 0:
-        current_total_supply = totalSupply()
+        tx = cast(Transaction, script_container)
+        account = tx.sender
         account_balance = balanceOf(account)
-
         assert account_balance >= amount
+
+        current_total_supply = totalSupply()
         put(TOTAL_SUPPLY, current_total_supply - amount)
 
         if account_balance == amount:
