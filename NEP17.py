@@ -31,9 +31,8 @@ def manifest_metadata() -> NeoMetadata:
 
 OWNER = UInt160({{owner}})
 TOKEN_DECIMALS = {{ token_decimals }}
-TOKEN_PREFIX = b't'
 TOKEN_SYMBOL = '{{ token_symbol }}'
-TOTAL_SUPPLY = b's'
+TOTAL_SUPPLY = b'total_supply'
 CONTINUE_MINTING = b'continue_minting'
 
 {% if (holders is defined) and holders %}
