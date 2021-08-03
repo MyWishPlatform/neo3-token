@@ -29,8 +29,7 @@ def manifest_metadata() -> NeoMetadata:
 # ---------------------------------
 
 
-ACCOUNT_PREFIX = b'a'
-ADMIN = UInt160({{ owner }})
+OWNER = UInt160({{owner}})
 TOKEN_DECIMALS = {{ token_decimals }}
 TOKEN_PREFIX = b't'
 TOKEN_SYMBOL = '{{ token_symbol }}'
@@ -188,7 +187,7 @@ def mint(account: UInt160, amount: int):
     :raise AssertionError: raised if amount is less than than 0
     """
     continue_minting = get(CONTINUE_MINTING).to_bool()
-    assert amount >= 0 and check_witness(ADMIN) and continue_minting
+    assert amount >= 0 and check_witness(OWNER) and continue_minting
     if amount != 0:
         current_total_supply = totalSupply()
         account_balance = balanceOf(account)
